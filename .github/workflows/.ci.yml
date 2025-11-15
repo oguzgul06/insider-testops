@@ -79,7 +79,8 @@ jobs:
     - name: Set Kubeconfig From GitHub Secret
       run: |
         mkdir -p ~/.kube
-        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+        echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 --decode > ~/.kube/config
+
 
     - name: Apply K8s Manifests
       run: |
