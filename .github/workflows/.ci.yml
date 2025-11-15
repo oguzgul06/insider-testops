@@ -1,0 +1,83 @@
+name: Insider TestOps CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-test:
+    name: Run Python Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
+    - name: Install dependencies
+      run: |
+        pip install pytest selenium
+
+    - name: Run PyTest
+      run: pytest tests -q
+
+  docker-build-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build Controller Image
+      run: |
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/insider-controller:v1 ./controller
+
+    - name: Build Chrome Node Image
+      run: |
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/insider-chrome-node:v1 ./chrome-node
+
+    - name: Push Images
+      run: |
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/insider-controller:v1
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/insider-chrome-node:v1
+
+  deploy-to-k8s:
+    name: Deploy to Kubernetes (Optional)
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Kubectl
+      uses: azure/setup-kubectl@v4
+      with:
+        version: 'latest'
+
+    - name: Set Kubeconfig From GitHub Secret
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+    - name: Apply K8s Manifests
+      run: |
+        kubectl apply -f k8s/controller-deployment.yaml
+        kubectl apply -f k8s/chrome-deployment.yaml
+        kubectl rollout restart deployment/test-controller
+        kubectl rollout restart deployment/chrome-node

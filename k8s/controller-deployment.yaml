@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-controller
+  template:
+    metadata:
+      labels:
+        app: test-controller
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: controller
+        image: <dockerhub-user>/insider-controller:v1
+        imagePullPolicy: Always

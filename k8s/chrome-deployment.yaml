@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chrome-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chrome-node
+  template:
+    metadata:
+      labels:
+        app: chrome-node
+    spec:
+      containers:
+      - name: chrome
+        image: <dockerhub-user>/insider-chrome-node:v1
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
