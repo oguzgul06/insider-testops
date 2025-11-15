@@ -22,7 +22,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        + pip install pytest selenium webdriver-manager
+          python -m pip install --upgrade pip
+          pip install pytest selenium webdriver-manager
 
     - name: Install Chrome
       run: |
