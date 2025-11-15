@@ -5,7 +5,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY controller.py /app
-COPY ../tests /app/tests
+COPY controller.py 
 
 CMD ["python", "controller.py"]
